@@ -48,10 +48,16 @@
     {{ openshift_client_binary }} process --config={{ mktemp.stdout }}/admin.kubeconfig -f "{{ mktemp.stdout }}/{{ __tsb_rbac_file }}" -n openshift-template-service-broker
     | {{ openshift_client_binary }} auth reconcile --config={{ mktemp.stdout }}/admin.kubeconfig -f -
 
+# TSB Route
+- name: Obtaining the route from the service catalog namespace
+  command: >
+    {{ openshift_client_binary }} get routes -n kube-service-catalog -o jsonpath='{.items[*].spec.host}{"\n"}'
+  register: tsb_route
+
 # Check that the TSB is running
 - name: Verify that TSB is running
   uri:
-    url: https://apiserver.openshift-template-service-broker.svc/healthz
+    url: https://{{ tsb_route }}/healthz
     validate_certs: no
     return_content: yes
   environment:
